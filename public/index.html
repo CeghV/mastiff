@@ -79,17 +79,12 @@
     <footer>this website was made with HATE <a href="https://bykeg.com/">by keg</a></footer>
     <script>
         const hitcounter = "https://neocities.org/api/info?sitename=mastiff";
-        const counterrequest = fetch(hitcounter).then(async function(response)  {
-            if(!response.ok)    {
-                throw new Error("failed to get hit count: " + response.status);
-            }
-            return response.json();
-        }).then(function(data)  {
-            var counter = document.getElementById("hitcounter");
-            counter.innerHTML = data.info.hits + " hits and counting";
-        }).catch(function(e)    {
-            throw new Error("fetch: " + e);
-        });
+        var bypass = document.createElement("script");
+        bypass.src = hitcounter;
+        document.body.appendChild(bypass);
+            // var counter = document.getElementById("hitcounter");
+            // counter.innerHTML = data.info.hits + " hits and counting";
     </script>
+    <script src="https://bykeg.com/mastiff/counter.php"></script>
 </body>
 </html>
