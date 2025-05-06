@@ -41,7 +41,7 @@
             margin-left: 20px;
             margin-right: 20px;
             letter-spacing: 5px;
-            text-align: center;
+            text-align: right;
         }
         footer  {
             background-color: white;
@@ -51,6 +51,14 @@
         p   {
             margin: 20px;
         }
+        .counter    {
+            text-align: right;
+            display: block;
+        }
+        .body   {
+            font-size: 1.2em;
+            letter-spacing: 2px;
+        }
     </style>
 </head>
 <body>
@@ -58,9 +66,10 @@
         <div class="container">
             <h1 class="title">MASTIFF MASTIFF MASTIFF MASTIFF</h1>
             <hr>
-            <h2 class="subheader">(This is the website, Mastiff, on neocities dot org)</h2>
+            <h2 class="subheader">(This is the website Mastiff on <a href="https://neocities.org/site/mastiff">neocities dot org</a>)</h2>
+            <p class="counter" id="hitcounter"></p>
             <hr>
-            <p>
+            <p class="body">
                 THERES NOTHING!!!
                 <br>
                 only publishing this to show my progress
@@ -68,5 +77,19 @@
         </div>
     </div>
     <footer>this website was made with HATE <a href="https://bykeg.com/">by keg</a></footer>
+    <script>
+        const hitcounter = "https://neocities.org/api/info?sitename=mastiff";
+        const counterrequest = fetch(hitcounter).then(async function(response)  {
+            if(!response.ok)    {
+                throw new Error("failed to get hit count: " + response.status);
+            }
+            return response.json();
+        }).then(function(data)  {
+            var counter = document.getElementById("hitcounter");
+            counter.innerHTML = data.info.hits + " hits and counting";
+        }).catch(function(e)    {
+            throw new Error("fetch: " + e);
+        });
+    </script>
 </body>
 </html>
