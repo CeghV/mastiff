@@ -7,6 +7,7 @@
     <style>
         body    {
             background-image: url("background.jpg");
+            image-rendering: pixelated;
         }
         .container  {
             width: 800px;
@@ -59,6 +60,63 @@
             font-size: 1.2em;
             letter-spacing: 2px;
         }
+        .project    {
+            width: 100%;
+            height: 600px;
+        }
+        .projecthover   {
+            padding: 40px;
+            opacity: 0;
+            position: absolute;
+            width: calc(800px - 80px);
+            height: calc(600px - 80px);
+            background-color: white;
+            transition: 0.1s opacity;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+            color: black;
+        }
+        .projecthover:hover {
+            opacity: 1;
+        }
+        .project img  {
+            width: 100%;
+            height: 600px;
+        }
+        .blogpost   {
+            width: 800px;
+            height: 100px;
+            display: flex;
+            letter-spacing: 2px;
+            color: black;
+        }
+        .blogpost img   {
+            height: 100px;
+            width: 133px;
+        }
+        .blogtitle  {
+            font-weight: bold;
+            font-size: 2em;
+        }
+        .blogtitle::first-letter {
+            text-transform: uppercase;
+        }
+        .blogsubtitle::first-letter {
+            text-transform: uppercase;
+        }
+        .blogpost p {
+            margin: 0;
+            margin-left: 10px;
+        }
+        .blogpost table {
+            width: 100%;
+        }
+        .blog   {
+            margin: 20px;
+        }
+        .nounderline    {
+            text-decoration: none !important;
+        }
     </style>
 </head>
 <body>
@@ -69,14 +127,42 @@
             <h2 class="subheader">(This is the website Mastiff on <a href="https://neocities.org/site/mastiff">neocities dot org</a>)</h2>
             <p class="counter" id="hitcounter"></p>
             <hr>
-            <p class="body">
-                THERES NOTHING!!!
-                <br>
-                only publishing this to show my progress
+            <p class="body" id="body">
+                <marquee behavior="alternate" direction="left">
+                    <a href="https://bykeg.com/">MY MAIN WEBSITE</a>
+                </marquee>
+                <br><br>
+                This is where I'll dump all of my random stuff that I feel doesn't deserve an entire dedicated server.<br><br>
+                Also I'm going to use this to advertise and draw more attention to my actual website, which I'll post higher quality things.<br><br>
+                The higher quality things in question will likely be about Modular Synthesis, Electrical Engineering and maybe some Computer Science.<br><br>
+                This website specifically will be more Computer Science.
+                <hr>
+                <h1 class="title">PROJECTS PROJECTS PROJECTS PRO</h1>
+                <hr>
+                <a href="game/">
+                    <div class="project">
+                        <div class="projecthover">
+                            <h1>GAME</h1>
+                            A roguelike game I made in about a week using pure HTML and JS. (No libraries!)<br><br>
+                            Intentionally not put on my actual website to avoid it being categorized as a video games website/similar on Palo Alto Networks.<br><br>
+                            The version on here is v1.0 and it's decently buggy. I have an entire shop system fleshed out and more, but it's not finished enough to put it on here.
+                        </div>
+                        <img src="game.png" alt="A screenshot of the video game in question, game.">
+                    </div>
+                </a>
+                <hr>
+                <h1 class="title">BLOG BLOG BLOG BLOG BLOG BLOG</h1>
+                <hr>
+                <h2 class="subheader">(Mirrored from my primary website)</h2>
+                <hr>
+                <div class="blog" id="blog"></div>
+                <hr>
+                <p>more stuff coming (guestbook) ((which is already online and available at <a href="https://bykeg.com/">bykeg</a>)) (((all guestbook entries on there will carry over here when i add it here)))</p>
             </p>
         </div>
     </div>
-    <footer>this website was made with HATE <a href="https://bykeg.com/">by keg</a></footer>
+    <footer>this website was made with HATE <a href="https://bykeg.com/">by keg</a> and absolutely zero generative ai since i dont really like it</footer>
     <script src="https://bykeg.com/mastiff/counter.php"></script>
+    <script src="https://bykeg.com/mastiff/blog.php"></script>
 </body>
 </html>

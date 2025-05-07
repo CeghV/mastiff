@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>game</title>
+    <style>
+        body    {
+            background-image: url("background.png");
+            font-family: cursive;
+        }
+        .wrapper    {
+            max-width: fit-content;
+            margin: auto;
+            background-color: white;
+            padding-bottom: 40px;
+        }
+        canvas  {
+            background-color: white;
+            border: 1px solid black;
+        }
+        img {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <img src="chex.png" id="chex">
+    <img src="projectile.png" id="projectile">
+    <img src="pop.png" id="pop">
+    <img src="sign.png" id="sign">
+    <img src="hole.png" id="hole">
+    <img src="rope.png" id="rope">
+    <img src="chest.png" id="chest">
+    <img src="flower.png" id="flower">
+    <img src="petals.png" id="petals">
+    <img src="kid.png" id="kid">
+    <img src="squid.png" id="squid">
+    <img src="cloud.png" id="cloud">
+    <img src="rain.png" id="rain">
+    <img src="explosion.png" id="explosion">
+    <img src="specialchest.png" id="specialchest">
+    <div class="wrapper">
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <h1>GAME</h1>
+        <h2>wasd movement, e to shoot, q to interact</h2>
+        <p>made <a href="https://bykeg.com/">by keg</a></p>
+        <p>the eye's name is chex</p>
+        <footer>copyright no copyright &copy;2025</footer>
+    </div>
+    <script>
+        var canvas = document.getElementById("canvas");
+        var context = canvas.getContext("2d");
+        context.imageSmoothingEnabled = false; // prevents js built-in anti-aliasing
+
+        var _chex = document.getElementById("chex"); // internal logic is denoted with an underscore
+        var _projectile = document.getElementById("projectile");
+        var _pop = document.getElementById("pop");
+        var _sign = document.getElementById("sign");
+        var _hole = document.getElementById("hole");
+        var _rope = document.getElementById("rope");
+        var _chest = document.getElementById("chest");
+        var _flower = document.getElementById("flower");
+        var _petals = document.getElementById("petals");
+        var _kid = document.getElementById("kid");
+        var _squid = document.getElementById("squid");
+        var _cloud = document.getElementById("cloud");
+        var _rain = document.getElementById("rain");
+        var _explosion = document.getElementById("explosion");
+        var _specialchest = document.getElementById("specialchest");
+
+        var _Sbass = new Audio("bass.wav");
+        var _Secho = new Audio("echo.wav");
+        var _Swind = new Audio("wind.wav");
+        var _Sshot = new Audio("shot.wav");
+        var _Spops = new Audio("pops.wav");
+        var _Shurt = new Audio("hurt.wav");
+        var _Sboom = new Audio("boom.wav");
+        var _Srain = new Audio("rain.wav");
+        var _Skill = new Audio("kill.wav");
+        var _Smhit = new Audio("mhit.wav");
+        var _Sadds = new Audio("adds.wav");
+        var _Swahs = new Audio("wahs.wav");
+        var _Sdies = new Audio("dies.wav");
+        var _Slive = new Audio("live.wav");
+
+        // level backgrounds
+        const bgs = [
+            "purple.png",
+            "yellow.png",
+            "red.png"
+        ];
+
+        // chest rewards
+        const rewards = [
+            "speed",
+            "damage",
+            "fire rate",
+            "luck",
+            "health",
+            "money",
+            "projectile speed"
+        ];
+
+        // special chest rewards
+        const specialrewards = [
+            "multishot",
+            "piercing",
+            "projectile size"
+        ];
+
+        // possible spawning mobs
+        const pmobs = [
+            "flower",
+            "kid",
+            "squid",
+            "cloud"
+        ];
+
+        // behavior enumerations
+        const behaviors = {
+            "chaser": 0,
+            "exploder": 1,
+            "flowershooter": 2,
+            "rainspawner": 3,
+            "flowerbullet": 4
+        };
+
+        var defaultchex = {
+            x: canvas.width / 2,
+            y: canvas.height / 2, // center of the screen
+            speed: 10, // 10 pixels/frame
+            firerate: 15, // 20 frames/shot
+            damage: 1,
+            health: 10,
+            luck: 0, // improves items from chests
+            moving: false,
+            money: 0,
+            multishot: 0,
+            piercing: 0,
+            mobskilled: 0,
+            _flip: false, // horizontal flip
+            _loading: false, // flag for loading screen
+            _stimer: 0, // shooting timer
+            _pspeed: 10, // projectile speed, could cause collision problems
+            _plife: 20, // projectile life in frames
+            _psize: 1, // projectile size multiplier
+            _level: 0,
+            _interacted: false, // for holding down interact
+            _damaged: false, // damage animation
+            _died: false // flag for if the death sound has played
+        };
+
+        // create a deep copy of defaultchex and assign it to chex
+        var chex = window.structuredClone(defaultchex);
+
+        var keys = {
+            "w": false, // includes WASD by default to prevent errors
+            "a": false,
+            "s": false,
+            "d": false,
+            "e": false,
+            "q": false,
+            " ": false
+        };
+        var mousex = 0;
+        var mousey = 0;
+
+        var start = {
+            image: "room1.png",
+            entities: [
+                {
+                    name: "sign",
+                    interactive: true,
+                    cost: -1,
+                    x: 80,
+                    y: 400,
+                    text: "press WASD to move, E to shoot and Q to interact/\
+                           your goal is to travel down the tunnels and go as far as possible/\
+                           keep track of how many times you have been hit and how much money you have/\
+                           because you are not able to check it",
+                    _element: _sign, // dom element to render the entity
+                    _shown: false,
+                    _custom: false, // flag for custom behavior using the function
+                    _topelement: false,
+                    _cfunction: null
+                },
+                {
+                    name: "hole",
+                    interactive: true,
+                    cost: -1,
+                    x: 600,
+                    y: 300,
+                    text: "NOTEXT",
+                    _element: _hole,
+                    _shown: false,
+                    _custom: true,
+                    _topelement: false,
+                    _cfunction: progress
+                }
+            ], // entities to spawn on load
+            mobs: [], // mobs to spawn on load
+            level: -1, // -1 for literally nothing
+            _loaded: false, // if room image has loaded
+            _image: null, // the internal image element
+            _clearchest: true // flag for if the clear chest has been spawned
+        };
+
+        var maps = [start];
+
+        var shots = [];
+
+        var text = [];
+
+        function movement() {
+            // update if chex is moving
+            if(keys.w || keys.a || keys.s || keys.d)    {
+                chex.moving = true;
+            }   else    {
+                chex.moving = false;
+            }
+
+            // incredibly simple, checks for keys and moves accordingly
+            if(keys.w)  {
+                chex.y -= chex.speed;
+            }
+            if(keys.s)  {
+                chex.y += chex.speed;
+            }
+            if(keys.d)  {
+                chex._flip = false;
+                chex.x += chex.speed;
+            }
+            if(keys.a)  {
+                chex._flip = true;
+                chex.x -= chex.speed;
+            }
+
+            // wall collisions check, every wall has a padding of 35 pixels
+            if(chex.x < 35) {
+                chex.x = 35;
+            }
+            if(chex.y < 35) {
+                chex.y = 35;
+                chex.moving = false;
+            }
+            var h_max = canvas.width - _chex.width - 35; // horizontal max
+            if(chex.x > h_max) {
+                chex.x = h_max;
+            }
+            var v_max = canvas.height - _chex.height - 35; // vertical max
+            if(chex.y > v_max) {
+                chex.y = v_max;
+                chex.moving = false;
+            }
+        };
+
+        function renderchex(x, y)   {
+            // made separate to clean up code
+            if(chex._flip)  {
+                context.scale(-1, 1);
+                context.drawImage(_chex, -x - _chex.width, y);
+                context.scale(-1, 1); // a negative times a negative is a positive
+            }   else    {
+                context.drawImage(_chex, x, y);
+            }
+        };
+
+        function rendermap(map)    {
+            // initial loading logic
+            if(!map._loaded)    {
+                // make image element and populate data
+                var image = document.createElement("img");
+                image.src = map.image;
+                document.body.appendChild(image);
+
+                // tell the logic that the image is loading
+                chex._loading = true;
+                image.addEventListener("load", function() {
+                    // update logic once loaded
+                    chex._loading = false;
+                    map._loaded = true;
+                    map._image = image;
+                    context.drawImage(image, 0, 0);
+                });
+
+                // exit out before anything else unintentional is ran
+                return;
+            }
+
+            // draw background
+            context.drawImage(map._image, 0, 0);
+        };
+
+        function drawentities(map)  {
+            map.entities.forEach(function(entity, i)    {
+                // draw the entity if it's not drawn on top
+                if(!entity._topelement) {
+                    context.drawImage(entity._element, entity.x, entity.y);
+                }
+            });
+        };
+
+        function entities(map)  {
+            // loop through every entity in the map
+            map.entities.forEach(function(entity, i)    {
+                // calculate distance for radial collisions
+                var midx = entity.x + entity._element.width / 2;
+                var midy = entity._element.height + entity.y;
+
+                var chexx = chex.x + _chex.width / 2;
+                var chexy = chex.y + _chex.height / 2;
+                var distance = Math.sqrt(Math.pow(chexx - midx, 2) + Math.pow(chexy - midy, 2));
+                distance = Math.abs(distance);
+
+                // only allow interactions when interactible, q is pressed and within range
+                if(entity.interactive && keys.q && distance < 70 && !chex._interacted)    {
+                    // prevent multiple triggers for one press of q
+                    chex._interacted = true;
+
+                    // play interact sound regardless of behavior
+                    _Secho.currentTime = 0;
+                    _Secho.play();
+
+                    // only activate if there is a cost
+                    if(entity.cost > 0)    {
+                        // make sure the player has enough money
+                        if(chex.money < entity.cost)   {
+                            text.push(["not enough money!", 60]);
+                            return;
+                        }   else    {
+                            text.push(["deducted " + entity.cost + " from your money", 60]);
+
+                            // deduct cost of entity
+                            chex.money -= entity.cost;
+                        }
+                    }
+                    // make sure that the text is inteded
+                    if(entity.text != "NOTEXT") {
+                        // split by line
+                        entity.text.split("/").forEach(function(string, i)  {
+                            text.push([string.trim(), 60]);
+                        });
+                    }
+
+                    // activate the entity's custom function if it can
+                    if(entity._custom)  {
+                        entity._cfunction();
+                    }
+                }
+
+                // prevent multiple triggers
+                if(!keys.q) {
+                    chex._interacted = false;
+                }
+
+                // display cost of item if close enough
+                if(distance < 70 && entity.cost > 0 && !entity._shown)    {
+                    text.push(["this costs " + entity.cost, 20]);
+                    entity._shown = true;
+                }
+
+                // allow retriggering after player has left trigger circle
+                if(distance > 70)   {
+                    entity._shown = false;
+                }
+            });
+        };
+
+        function createshot(x, y, tx, ty, addangle)   {
+            // target positions centered around the projectile
+            var cposx = tx - _projectile.width / 2;
+            var cposy = ty - _projectile.height / 2;
+
+            // calculate angle of movement using atan2
+            var angle = Math.atan2(cposx - x, cposy - y) + addangle;
+
+            // calculate final velocities according to chex._pspeed
+            var xvel = Math.sin(angle) * chex._pspeed;
+            var yvel = Math.cos(angle) * chex._pspeed;
+
+            // finalize the shot item
+            var shot = [x, y, xvel, yvel, chex._plife, chex.piercing, []];
+
+            // add to shots array to be rendered
+            shots.push(shot);
+        };
+
+        function shooting(map) {
+            // fire when firing timer is 0 and e is held
+            if(chex._stimer == 0 && keys.e && chex.multishot == 0) {
+                var x = chex.x + _chex.width / 2 - (_projectile.width * chex._psize) / 2;
+                var y = chex.y + _chex.height / 2 - (_projectile.height * chex._psize) / 2;
+                createshot(x, y, mousex, mousey, 0);
+
+                chex._stimer = chex.firerate;
+
+                _Sshot.currentTime = 0;
+                _Sshot.play();
+            }
+
+            if(chex._stimer == 0 && keys.e && chex.multishot != 0)  {
+                for(var i = 0; i < chex.multishot + 1; i++) {
+                    var x = chex.x + _chex.width / 2 - (_projectile.width * chex._psize) / 2;
+                    var y = chex.y + _chex.height / 2 - (_projectile.height * chex._psize) / 2;
+                    createshot(x, y, mousex, mousey, (i * 0.2) - ((chex.multishot - 1) * 0.2) / 2);
+
+                    chex._stimer = chex.firerate;
+                }
+
+                _Sshot.currentTime = 0;
+                _Sshot.play();
+            }
+
+            // decrease the firing timer when possible
+            if(chex._stimer > 0)    {
+                chex._stimer -= 1;
+            }
+
+            // shots rendering loop
+            if(shots.length > 0)    {
+                for(var i = 0; i < shots.length; i++)   {
+                    var shot = shots[i];
+                    map.mobs.forEach(function(mob, j)   {
+                        // center shot position
+                        var px = shot[0] + _projectile.width / 2;
+                        var py = shot[1] + _projectile.height / 2;
+
+                        // center mob position
+                        var mx = mob.x + mob._image.width / 2;
+                        var my = mob.y + mob._image.height / 2;
+                        var distance = Math.sqrt(Math.pow(px - mx, 2) + Math.pow(py - my, 2));
+                        if(distance < 40 * chex._psize)   {
+                            if(!shot[6].includes(mob))  {
+                                mob.health -= chex.damage;
+                            
+                                _Smhit.currentTime = 0;
+                                _Smhit.play();
+                            }
+
+                            if(shot[5] != 0 && !shot[6].includes(mob))    {
+                                shots[i][5] -= 1;
+                                shot[6].push(mob);
+                            }
+                            if(shot[5] == 0)    {
+                                shots[i][4] = 0;
+                            }
+
+                            return;
+                        }
+                    });
+
+                    // fancy bubble popping on last frame of life and sound
+                    if(shot[4] == 0)    {
+                        context.scale(chex._psize, chex._psize);
+                        context.drawImage(_pop, shot[0] / chex._psize, shot[1] / chex._psize);
+                        context.scale(1 / chex._psize, 1 / chex._psize);
+
+                        _Spops.currentTime = 0;
+                        _Spops.play();
+                    }   else    {
+                        context.scale(chex._psize, chex._psize);
+                        context.drawImage(_projectile, shot[0] / chex._psize, shot[1] / chex._psize);
+                        context.scale(1 / chex._psize, 1 / chex._psize);
+                    }
+
+                    // add the x and y velocities to the x and y positions
+                    shots[i][0] += shot[2];
+                    shots[i][1] += shot[3];
+
+                    // remove dead shots from array or decrease life timer
+                    if(shot[4] == 0)    {
+                        shots.splice(i, 1);
+                        i -= 1;
+                    }   else    {
+                        shots[i][4] -= 1;
+                    }
+                }
+            }
+        };
+
+        function onscreengui()  {
+            // make sure there is text to render
+            if(text.length > 0) {
+                // deduct from the text's life
+                text[0][1] -= 1;
+
+                // remove the text once it's run out of time
+                if(text[0][1] <= 0) {
+                    text.shift();
+
+                    // play sound
+                    _Sbass.play();
+                }
+
+                // prevents rendering when there's no text
+                if(text.length <= 0) {
+                    return;
+                }
+
+                // draw background for text
+                context.fillStyle = "black";
+                context.fillRect(0, 0, canvas.width, 30);
+
+                // draw text
+                context.font = "20px cursive";
+                context.fillStyle = "white";
+                context.fillText(text[0][0], 20, 20);
+            }
+        };
+
+        function deprogress()   {
+            // go back a level but skip treasure rooms
+            chex._level -= 1;
+            if(maps[chex._level].image == "green.png")  {
+                deprogress();
+            }
+            shots = [];
+        };
+
+        function forceprog()   {
+            // force progressing one level
+            chex._level += 1;
+
+            // remove projectiles
+            shots = [];
+        };
+
+        function genmobs(level)  {
+            var count = Math.random() * 4 + (level / 5);
+            count = Math.floor(count);
+
+            if(count > 8)   {
+                count = 8;
+            }
+
+            var mobs = [];
+
+            for(var i = 0; i < count; i++)  {
+                var choose = Math.floor(Math.random() * pmobs.length);
+                var mob = {
+                    name: pmobs[choose],
+                    behavior: null,
+                    health: null,
+                    speed: Math.floor(level / 5 + 1),
+                    reward: 1,
+                    x: Math.random() * (canvas.width - 100 * 2) + 100,
+                    y: Math.random() * (canvas.height - 100 * 2) + 100,
+                    _image: null,
+                    _stimer: 0,
+                    _flip: false,
+                    _topelement: false,
+                    _faceplayer: true,
+                    _vulnerable: false,
+                    _deathsound: true,
+                    _angle: null
+                };
+
+                switch(choose)  {
+                    case 0:
+                        mob.health = 1;
+                        mob._image = _flower;
+                        mob.behavior = behaviors.flowershooter;
+                        break;
+                    case 1:
+                        mob.health = 1;
+                        mob._image = _kid;
+                        mob.behavior = behaviors.exploder;
+                        break;
+                    case 2:
+                        mob.health = 4;
+                        mob.reward = 2;
+                        mob._image = _squid;
+                        mob.behavior = behaviors.chaser;
+                        break;
+                    case 3:
+                        mob.health = 3;
+                        mob.reward = 3;
+                        mob._image = _cloud;
+                        mob.behavior = behaviors.rainspawner;
+                        mob._topelement = true;
+                        mob._faceplayer = false;
+                        break;
+                }
+
+                var scaling = Math.floor(level / 4);
+                mob.health += scaling;
+
+                mobs.push(mob);
+            }
+
+            return mobs;
+        };
+
+        function openchest(rank)    {
+            // choose a random reward and round it
+            var reward = Math.random() * rewards.length;
+            reward = Math.floor(reward);
+
+            // calculate the reward randomly
+            var add = 0;
+
+            if(rank == 1 && reward != 3)   {
+                add -= 3;
+            }
+
+            switch(reward)    {
+                case 0:
+                    add += Math.random() * 5 + 1;
+                    add = Math.floor(add);
+                    add += chex.luck;
+                    if(add <= 0)    {
+                        add = 1;
+                    }
+                    chex.speed += add;
+                    break;
+                case 1:
+                    add += Math.random() * 4 + 2;
+                    add = Math.floor(add);
+                    add += chex.luck;
+                    if(add <= 0)    {
+                        add = 1;
+                    }
+                    chex.damage += add;
+                    break;
+                case 2:
+                    add += Math.random() * 3 + 3;
+                    add = Math.floor(add);
+                    add += chex.luck;
+                    if(add <= 0)    {
+                        add = 1;
+                    }
+                    chex.firerate -= add;
+                    if(chex.firerate < 0)   {
+                        chex.firerate = 0;
+                    }
+                    break;
+                case 3:
+                    add += Math.random() * 2;
+                    add = Math.floor(add);
+                    if(add <= 0)    {
+                        add = 1;
+                    }
+                    chex.luck += add;
+                    break;
+                case 4:
+                    add += Math.random() * 5 + 3;
+                    add = Math.floor(add);
+                    add += chex.luck;
+                    if(add <= 0)    {
+                        add = 1;
+                    }
+                    chex.health += add;
+                    break;
+                case 5:
+                    add += Math.random() * 10 + 8;
+                    add = Math.floor(add);
+                    add += chex.luck;
+                    if(add <= 0)    {
+                        add = 1;
+                    }
+                    chex.money += add;
+                    break;
+                case 6:
+                    add += Math.random() * 5 + 1;
+                    add = Math.floor(add);
+                    add += chex.luck;
+                    if(add <= 0)    {
+                        add = 1;
+                    }
+                    chex._pspeed += add;
+                    break;
+            }
+
+            // tell the player what they got
+            text.push(["you've gained +" + add + " " + rewards[reward], 60]);
+
+            // remove the chest from the level
+            maps[chex._level].entities.forEach(function(entity, i)   {
+                if(entity.name == "chest")  {
+                    maps[chex._level].entities.splice(i, 1);
+                }
+            });
+        };
+
+        function chestrank2()   {
+            openchest(2);
+        };
+
+        function chestrank1()   {
+            openchest(1);
+        };
+
+        function specialreward()    { 
+            // choose a random reward and round it
+            var reward = Math.random() * specialrewards.length;
+            reward = Math.floor(reward);
+
+            var added = 0;
+
+            switch(reward)  {
+                case 0:
+                    chex.multishot += 1;
+                    added = 1;
+                    break;
+                case 1:
+                    chex.piercing += 2;
+                    added = 2;
+                    break;
+                case 2:
+                    chex._psize += 0.5;
+                    added = 10;
+                    break;
+            }
+
+            text.push(["you've gained +" + added + " " + specialrewards[reward], 60]);
+
+            maps[chex._level].entities.forEach(function(entity, i)   {
+                if(entity.name == "specialchest")  {
+                    maps[chex._level].entities.splice(i, 1);
+                }
+            });
+        };
+
+        function treasure()   {
+            // treasure rooms have no enemies and use the green background
+            var map = {
+                image: "green.png",
+                entities: [],
+                mobs: [],
+                level: chex._level,
+                _loaded: false,
+                _image: null,
+                _clearchest: true
+            };
+
+            // create the chest entity
+            var chest = {
+                name: "chest",
+                interactive: true,
+                cost: Math.ceil(Math.random() * 10),
+                x: Math.random() * (canvas.width - 100 * 2) + 100,
+                y: Math.random() * (canvas.height - 100 * 2) + 100,
+                text: "you opened a chest",
+                _element: _chest,
+                _shown: false,
+                _custom: true,
+                _topelement: false,
+                _cfunction: chestrank2
+            };
+            
+            // special chest for special rewards
+            var specialchest = {
+                name: "specialchest",
+                interactive: true,
+                cost: 50,
+                x: Math.random() * (canvas.width - 100 * 2) + 100,
+                y: Math.random() * (canvas.height - 100 * 2) + 100,
+                text: "you opened a special chest",
+                _element: _specialchest,
+                _shown: false,
+                _custom: true,
+                _topelement: false,
+                _cfunction: specialreward
+            };
+
+            // make the rope entity to let the player leave
+            var rope = {
+                name: "rope",
+                interactive: true,
+                cost: -1,
+                x: canvas.width / 2 - _rope.width / 2 + (Math.random() * 10 - 5),
+                y: canvas.height / 2 - _rope.height / 2 + (Math.random() * 10 - 5),
+                text: "NOTEXT",
+                _element: _rope,
+                _shown: false,
+                _custom: true,
+                _topelement: true,
+                _cfunction: deprogress
+            };
+
+            // add the entities to the map
+            map.entities.push(chest);
+            map.entities.push(rope);
+
+            if(Math.floor(Math.random() * 2) == 1)    {
+                map.entities.push(specialchest);
+            }
+
+            // add the map to the main array
+            maps.push(map);
+        };
+
+        function progress() {
+            shots = [];
+            // ensure that there is a next level and it isn't a treasure room
+            if(typeof maps[chex._level + 1] != "undefined") {
+                chex._level += 1;
+
+                // recurse the function to go to next level
+                if(maps[chex._level].image == "green.png")  {
+                    progress();
+                }
+                return;
+            }
+
+            chex._level += 1;
+
+            // choose random map background
+            var random = Math.random() * bgs.length;
+            random = Math.floor(random);
+
+            // make map object with random background
+            var map = {
+                image: bgs[random],
+                entities: [],
+                mobs: genmobs(chex._level),
+                level: chex._level,
+                _loaded: false,
+                _image: null,
+                _clearchest: false
+            };
+
+            // the hole entity to go to the next room
+            var hole = {
+                name: "hole",
+                interactive: true,
+                cost: -1,
+                x: Math.random() * (canvas.width - 100 * 2) + 100,
+                y: Math.random() * (canvas.height - 100 * 2) + 100,
+                text: "NOTEXT",
+                _element: _hole,
+                _shown: false,
+                _custom: true,
+                _topelement: false,
+                _cfunction: progress
+            };
+
+            // the rope entity to return to the previous hole
+            var rope = {
+                name: "rope",
+                interactive: true,
+                cost: -1,
+                x: canvas.width / 2 - _rope.width / 2 + (Math.random() * 10 - 5),
+                y: canvas.height / 2 - _rope.height / 2 + (Math.random() * 10 - 5),
+                text: "NOTEXT",
+                _element: _rope,
+                _shown: false,
+                _custom: true,
+                _topelement: true,
+                _cfunction: deprogress
+            };
+
+            // add entities to the map
+            map.entities.push(hole);
+            map.entities.push(rope);
+
+            // add the map to the roster
+            maps.push(map);
+
+            // make a treasure room 2/5ths of the time
+            if(Math.random() > 0.6) {
+                // make the tunnel entitiy and give it the appropriate custom functions
+                var tunnel = {
+                    name: "tunnel",
+                    interactive: true,
+                    cost: -1,
+                    x: Math.random() * (canvas.width - 100 * 2) + 100,
+                    y: Math.random() * (canvas.height - 100 * 2) + 100,
+                    text: "NOTEXT",
+                    _element: _hole,
+                    _shown: false,
+                    _custom: true,
+                    _topelement: false,
+                    _cfunction: forceprog
+                }
+
+                // add the tunnel to the map
+                map.entities.push(tunnel);
+
+                // make the treasure room
+                treasure();
+            }
+        };
+
+        function drawmobs(map)  {
+            map.mobs.forEach(function(mob, i)   {
+                // only render mob if it's not supposed to be on top
+                if(!mob._topelement) {
+                    // also render correctly if the mob is flipped
+                    if(mob._flip)  {
+                        context.scale(-1, 1);
+                        context.drawImage(mob._image, -mob.x - mob._image.width, mob.y);
+                        context.scale(-1, 1); // a negative times a negative is a positive
+                    }   else    {
+                        context.drawImage(mob._image, mob.x, mob.y);
+                    }
+                }
+            });
+        };
+
+        function monsters(map)  {
+            map.mobs.forEach(function(mob, i)   {
+                // center player position
+                var px = chex.x + _chex.width / 2;
+                var py = chex.y + _chex.height / 2;
+
+                // center mob position
+                var mx = mob.x + mob._image.width / 2;
+                var my = mob.y + mob._image.height / 2;
+
+                var distance = Math.sqrt(Math.pow(px - mx, 2) + Math.pow(py - my, 2));
+
+                if(px > mx && mob._faceplayer)   {
+                    mob._flip = true;
+                }   else    {
+                    mob._flip = false;
+                }
+                switch(mob.behavior)    {
+                    case behaviors.chaser:
+                        // calculate angle of movement using atan2
+                        var angle = Math.atan2(px - mx, py - my);
+
+                        // calculate final velocities
+                        var xvel = Math.sin(angle) * (mob.speed / 2);
+                        var yvel = Math.cos(angle) * (mob.speed / 2);
+
+                        // add velocities to mob position
+                        mob.x += xvel;
+                        mob.y += yvel;
+
+                        // deal damage to the player if it's too close
+                        if(distance < 55 && mob._stimer <= 0)   {
+                            chex.health -= 1;
+                            chex._damaged = true;
+                            mob._stimer = 20;
+                            if(mob._vulnerable) {
+                                map.mobs.splice(i, 1);
+                            }
+                        }
+                        break;
+                    case behaviors.exploder:
+                        // if it's already exploded, remove the mob and damage the player
+                        if(mob._image == _explosion) {
+                            map.mobs.splice(i, 1);
+                            return;
+                        }
+
+                        // trigger if the player is within 100 pixels
+                        if(distance < 100)  {
+                            // explode it
+                            mob._image = _explosion;
+                            mob.x -= _explosion.width / 4;
+
+                            // play explosion sound
+                            _Sboom.currentTime = 0;
+                            _Sboom.play();
+
+                            // damage the player
+                            chex.health -= 1;
+                            chex._damaged = true;
+                        }
+                        break;
+                    case behaviors.rainspawner:
+                        if(mob._stimer <= 0)    {
+                            var raindrop = {
+                                name: "raindrop",
+                                behavior: behaviors.chaser,
+                                health: 1,
+                                speed: 2,
+                                reward: 0,
+                                x: mx,
+                                y: my,
+                                _image: _rain,
+                                _stimer: 0,
+                                _flip: false,
+                                _topelement: false,
+                                _faceplayer: true,
+                                _vulnerable: true,
+                                _deathsound: false,
+                                _angle: null
+                            };
+                            map.mobs.push(raindrop);
+                            mob._stimer = 60 - mob.speed * 2;
+
+                            _Srain.currentTime = 0;
+                            _Srain.play();
+                        }
+                        break;
+                    case behaviors.flowershooter:
+                        if(mob._stimer <= 0)    {
+                            var angle = Math.atan2(px - mx, py - my);
+                            var bullet = {
+                                name: "flowerbullet",
+                                behavior: behaviors.flowerbullet,
+                                health: 1,
+                                speed: 10,
+                                reward: 0,
+                                x: mx - _petals.width / 2,
+                                y: my - _petals.height / 2,
+                                _image: _petals,
+                                _stimer: 100,
+                                _flip: false,
+                                _topelement: false,
+                                _faceplayer: false,
+                                _vulnerable: true,
+                                _deathsound: false,
+                                _angle: angle
+                            };
+                            map.mobs.push(bullet);
+                            mob._stimer = 40 - mob.speed * 2;
+
+                            _Swahs.currentTime = 0;
+                            _Swahs.play();
+                        }
+                        break;
+                    case behaviors.flowerbullet:
+                        // calculate final velocities
+                        var xvel = Math.sin(mob._angle) * mob.speed;
+                        var yvel = Math.cos(mob._angle) * mob.speed;
+
+                        // add velocities to mob position
+                        mob.x += xvel;
+                        mob.y += yvel;
+
+                        // deal damage to the player if it's too close
+                        if(distance < _petals.width)   {
+                            chex.health -= 1;
+                            chex._damaged = true;
+                            if(mob._vulnerable) {
+                                map.mobs.splice(i, 1);
+                                return;
+                            }
+                        }
+
+                        if(mob._stimer == 0)    {
+                            map.mobs.splice(i, 1);
+                        }
+                        break;
+                }
+                // always decrement the delay timer
+                if(mob._stimer > 0) {
+                    mob._stimer -= 1;
+                }
+
+                // delete the mob if it's health is or is below zero and add reward
+                if(mob.health <= 0) {
+                    map.mobs.splice(i, 1);
+                    chex.mobskilled += 1;
+
+                    if(mob.reward > 0)  {
+                        text.push(["gained " + mob.reward + " money", 20]);
+                        chex.money += mob.reward;
+                    }
+
+                    if(mob._deathsound) {
+                        _Skill.currentTime = 0;
+                        _Skill.play();
+                    }
+                }
+            });
+        };
+
+        function clearchest(map)    {
+            if(map.mobs.length == 0 && !map._clearchest && chex._level > 5)    {
+                var chest = {
+                    name: "chest",
+                    interactive: true,
+                    cost: 0,
+                    x: Math.random() * (canvas.width - 100 * 2) + 100,
+                    y: Math.random() * (canvas.height - 100 * 2) + 100,
+                    text: "you opened a chest",
+                    _element: _chest,
+                    _shown: false,
+                    _custom: true,
+                    _topelement: false,
+                    _cfunction: chestrank1
+                };
+                map.entities.push(chest);
+                map._clearchest = true;
+
+                _Sadds.currentTime = 0;
+                _Sadds.play();
+            }
+        };
+
+        function topelements(map)  {
+            // loop through all entities
+            map.entities.forEach(function(entity, i) {
+                // only render the elements that are on top of everything
+                if(entity._topelement)  {
+                    context.drawImage(entity._element, entity.x, entity.y);
+                }
+            });
+
+            // loop through all mobs
+            map.mobs.forEach(function(mob, i)   {
+                // only render mob if it's supposed to be on top
+                if(mob._topelement) {
+                    // render flipped if it is
+                    if(mob._flip)  {
+                        context.scale(-1, 1);
+                        context.drawImage(mob._image, -mob.x - mob._image.width, mob.y);
+                        context.scale(-1, 1); // a negative times a negative is a positive
+                    }   else    {
+                        context.drawImage(mob._image, mob.x, mob.y);
+                    }
+                }
+            });
+        };
+
+        function death()    {
+            // black backdrop to cover screen
+            context.fillStyle = "black";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            context.font = "60px cursive";
+            context.fillStyle = "white";
+            context.fillText("YOU DIED.", 20, 80);
+
+            context.font = "42px cursive";
+            context.fillText("your final stats", 20, 142);
+
+            context.font = "24px cursive";
+            context.fillText("money: " + chex.money, 20, 162 + 24 * 1);
+            context.fillText("walk speed: " + chex.speed, 20, 162 + 24 * 2);
+            context.fillText("fire speed: " + (15 - chex.firerate), 20, 162 + 24 * 3);
+            context.fillText("damage: " + chex.damage, 20, 162 + 24 * 4);
+            context.fillText("luck: " + chex.luck, 20, 162 + 24 * 5);
+            context.fillText("projectile speed: " + chex._pspeed, 20, 162 + 24 * 6);
+            context.fillText("projectile size: " + chex._psize, 20, 162 + 24 * 7);
+            context.fillText("multishot projectiles: " + chex.multishot, 20, 162 + 24 * 8);
+            context.fillText("piercing levels: " + chex.piercing, 20, 162 + 24 * 9);
+
+            context.font = "48px cursive";
+            context.fillText("MAX LEVEL REACHED: " + maps.length, 20, 182 + 24 * 9 + 48);
+            context.fillText("ENEMIES KILLED: " + chex.mobskilled, 20, 182 + 24 * 9 + 48 * 2);
+
+            context.font = "36px cursive";
+            context.fillText("press space to restart", canvas.width - 336, canvas.height - 36);
+
+            if(!chex._died) {
+                _Sdies.play()
+                chex._died = true;
+            }
+
+            if(keys[" "])   {
+                chex = window.structuredClone(defaultchex);
+                maps = [start];
+                shots = [];
+                text = [];
+
+                _Slive.currentTime = 0;
+                _Slive.play();
+            }
+        }
+
+        function loop(time) {
+            // kill the player if they die and prevent logic
+            if(chex.health <= 0) {
+                death();
+                return;
+            }
+
+            // add the free chest on clear if the floor is cleared
+            clearchest(maps[chex._level]);
+
+            // calculate entity logic first to prevent blank frames
+            entities(maps[chex._level]);
+
+            // update mobs
+            monsters(maps[chex._level]);
+
+            // draw the current room
+            rendermap(maps[chex._level]);
+
+            // check if something is loading
+            if(chex._loading)   {
+                // black backdrop to cover screen
+                context.fillStyle = "black";
+                context.fillRect(0, 0, canvas.width, canvas.height);
+
+                // simple loading text with expanding dots
+                context.font = "60px cursive";
+                context.fillStyle = "white";
+                context.fillText("LOADING" + ".".repeat(time % 8), 20, canvas.height - 60);
+
+                // exit out of function to prevent any logic from happening
+                return;
+            }
+
+            // draw entities
+            drawentities(maps[chex._level]);
+
+            // update x and y
+            movement();
+
+            // draw mobs
+            drawmobs(maps[chex._level]);
+
+            // silly bob up and down
+            if(time % 2 > 0 && chex.moving)    {
+                renderchex(chex.x, chex.y - chex.speed / 2);
+            }   else    {
+                renderchex(chex.x, chex.y);
+            }
+
+            // damage animation
+            if(chex._damaged)   {
+                // tint the player using a semi opaque red rectangle
+                context.fillStyle = "rgba(255, 0, 0, 0.7)";
+                context.fillRect(chex.x, chex.y, _chex.width, _chex.height);
+
+                // hit sound
+                _Shurt.currentTime = 0;
+                _Shurt.play();
+
+                chex._damaged = false;
+            }
+
+            // randomly play wind sfx and ensure that autoplay is allowed
+            if(Math.floor(Math.random() * 1000) == 1)  {
+                if(navigator.getAutoplayPolicy("audiocontext") == "allowed") {
+                    _Swind.play();
+                }
+            }
+                        
+            // draw elements that are on top of everything
+            topelements(maps[chex._level]);
+
+            // update shooting interactions
+            shooting(maps[chex._level]);
+
+            // render gui elements, mostly text
+            onscreengui();
+        };
+
+        var time = 0;
+        _chex.addEventListener("load", function()    {
+            chex.x -= _chex.width / 2;
+            chex.y -= _chex.height / 2;
+
+            document.addEventListener("keydown", function(key)  {
+                keys[key.key.toLowerCase()] = true;
+            });
+
+            document.addEventListener("keyup", function(key)  {
+                keys[key.key.toLowerCase()] = false;
+            });
+
+            canvas.addEventListener("mousemove", function(pos)  {
+                var rect = pos.target.getBoundingClientRect();
+
+                mousex = pos.clientX - rect.left;
+                mousex = Math.floor(mousex);
+
+                mousey = pos.clientY - rect.top;
+                mousey = Math.floor(mousey);
+            });
+
+            setInterval(function()  {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+
+                time += 1;
+                loop(time);
+            }, 1000/24);
+        });
+    </script>
+</body>
+</html>
