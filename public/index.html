@@ -11,7 +11,7 @@
         }
         .container  {
             width: 800px;
-            height: 8000px;
+            height: fit-content;
             border: 1px solid black;
             border-left: 3px solid black;
             border-right: 3px solid black;
@@ -120,6 +120,19 @@
         .nounderline    {
             text-decoration: none !important;
         }
+        .entry  {
+            width: 100%;
+            height: fit-content;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+        }
+        .entry em, .entry span  {
+            display: block;
+            text-indent: 2em;
+        }
+        .guestbook  {
+            margin: 20px;
+        }
     </style>
 </head>
 <body>
@@ -138,7 +151,8 @@
                 This is where I'll dump all of my random stuff that I feel doesn't deserve an entire dedicated server.<br><br>
                 Also I'm going to use this to advertise and draw more attention to my actual website, which I'll post higher quality things.<br><br>
                 The higher quality things in question will likely be about Modular Synthesis, Electrical Engineering and maybe some Computer Science.<br><br>
-                This website specifically will be more Computer Science.
+                This website specifically will be more Computer Science.<br><br>
+                Check out the source code on <a href="https://github.com/CeghV/mastiff">Github</a>!
                 <hr>
                 <h1 class="title">PROJECTS PROJECTS PROJECTS PRO</h1>
                 <hr>
@@ -160,12 +174,17 @@
                 <hr>
                 <div class="blog" id="blog"></div>
                 <hr>
-                <p>more stuff coming (guestbook) ((which is already online and available at <a href="https://bykeg.com/">bykeg</a>)) (((all guestbook entries on there will carry over here when i add it here)))</p>
+                <h1 class="title">GUESTBOOK GUESTBOOK GUESTBOO</h1>
+                <hr>
+                <h2 class="subheader">(Mirrored from my primary website)</h2>
+                <hr>
+                <div class="guestbook" id="guestbook"></div>
             </p>
         </div>
     </div>
     <footer>this website was made with HATE <a href="https://bykeg.com/">by keg</a> and absolutely zero generative ai since i dont really like it</footer>
     <script src="https://bykeg.com/mastiff/counter.php"></script>
     <script src="https://bykeg.com/mastiff/blog.php"></script>
+    <script src="https://bykeg.com/mastiff/guestbook.php"></script>
 </body>
 </html>
