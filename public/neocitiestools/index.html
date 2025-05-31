@@ -9,15 +9,11 @@
     <h1>Neocities Tools</h1>
     <h3>Get website ID</h3>
     <h4 id="webid" style="color: darkgreen"></h4>
-    <form action="https://bykeg.com/mastiff/neocitiestools/id.php" method="get">
-        <input type="text" name="site" placeholder="Enter site name here..."><br><br>
-        <input type="submit" value="Get ID">
-    </form>
+    <input type="text" id="site" placeholder="Enter site name here..."><br><br>
+    <button id="idsubmit" onclick="siteid();">Get ID</button>
     <h3>Generate JS for custom thumbnail</h3>
-    <form action="javascript:thumbnail()">
-        <input type="text" id="url" placeholder="Enter image URL here..."><br><br>
-        <input type="submit" value="Return JS">
-    </form>
+    <input type="text" id="url" placeholder="Enter image URL here..."><br><br>
+    <button onclick="thumbnail();">Return JS</button>
     <script>
         function thumbnail()    {
             var js = `
@@ -45,14 +41,29 @@ PASTE THIS AT THE BOTTOM OF YOUR INDEX.HTML LANDING PAGE:
             alert(js);
         };
 
-        var params = new URLSearchParams(document.location.search);
+        function siteid()   {
+            var site = document.getElementById("site").value;
 
-        var siteid = params.get("siteid");
+            var script = document.createElement("script");
+            script.src = "https://bykeg.com/mastiff/neocitiestools/id.php?site=" + site;
 
-        if(siteid != null)   {
-            var id = document.getElementById("webid");
-            id.innerHTML = "Website ID: " + siteid;
-        }
+            document.body.appendChild(script);
+
+            var button = document.getElementById("idsubmit");
+            button.disabled = true;
+
+            var display = document.getElementById("webid");
+            display.innerHTML = "";
+            display.style.color = "darkgreen";
+
+            script.addEventListener("load", function()    {
+                button.disabled = false;
+                if(display.innerHTML == "") {
+                    display.style.color = "darkred";
+                    display.innerHTML = "Failed to get ID";
+                }
+            });
+        };
     </script>
 </body>
 </html>
