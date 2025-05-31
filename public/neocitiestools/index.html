@@ -11,9 +11,15 @@
     <h4 id="webid" style="color: darkgreen"></h4>
     <input type="text" id="site" placeholder="Enter site name here..."><br><br>
     <button id="idsubmit" onclick="siteid();">Get ID</button>
-    <h3>Generate JS for custom thumbnail</h3>
+    <h3>Generate JS for custom thumbnail</h3>   
     <input type="text" id="url" placeholder="Enter image URL here..."><br><br>
     <button onclick="thumbnail();">Return JS</button>
+    <h3>Get thumbnail for site (Works with deleted sites)</h3>
+    <input type="text" id="thumbnail" placeholder="Enter site name here..."><br><br>
+    <input type="text" id="page" placeholder="Enter page filename here..." value="index.html"><br><br>
+    <button onclick="sitethumb()">Get thumbnail</button><br><br>
+    <a href="" id="thumblink"><img id="thumbimg" src=""></a>
+    <script src="https://cdn.sheetjs.com/crc-32-latest/package/crc32.js"></script>
     <script>
         function thumbnail()    {
             var js = `
@@ -63,6 +69,30 @@ PASTE THIS AT THE BOTTOM OF YOUR INDEX.HTML LANDING PAGE:
                     display.innerHTML = "Failed to get ID";
                 }
             });
+        };
+        
+        function sitethumb()    {
+            var site = document.getElementById("thumbnail").value;
+            var page = document.getElementById("page").value;
+            var thumbnail = document.getElementById("thumbimg");
+            var link = document.getElementById("thumblink");
+
+            var template = "https://neocities.org/site_screenshots/";
+
+            var checksum = CRC32.str(site) >>> 0;
+
+            console.log(string);
+
+            var string = checksum.toString();
+
+            console.log(string);
+
+            template += string.substring(0, 2) + "/";
+            template += string.substring(2, 4) + "/";
+            template += site + "/" + page + ".540x405.webp";
+
+            thumbnail.src = template;
+            link.href = template;
         };
     </script>
 </body>
