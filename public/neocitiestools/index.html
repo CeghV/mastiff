@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neocities Tools</title>
+</head>
+<body>
+    <h1>Neocities Tools</h1>
+    <h3>Get website ID</h3>
+    <h4 id="webid" style="color: darkgreen"></h4>
+    <form action="https://bykeg.com/mastiff/neocitiestools/id.php" method="get">
+        <input type="text" name="site" placeholder="Enter site name here..."><br><br>
+        <input type="submit" value="Get ID">
+    </form>
+    <h3>Generate JS for custom thumbnail</h3>
+    <form action="javascript:thumbnail()">
+        <input type="text" id="url" placeholder="Enter image URL here..."><br><br>
+        <input type="submit" value="Return JS">
+    </form>
+    <script>
+        function thumbnail()    {
+            var js = `
+PASTE THIS AT THE BOTTOM OF YOUR INDEX.HTML LANDING PAGE:
+
+<script>
+    if(navigator.userAgent == "Screenjesus")    {
+        var thumbnail = document.createElement("img");
+        thumbnail.src = "` + document.getElementById("url").value + `";
+
+        thumbnail.style.width = "100%";
+        thumbnail.style.height = "100%";
+        thumbnail.style.position = "absolute";
+        thumbnail.style.margin = "auto";
+        thumbnail.style.top = "0";
+        thumbnail.style.bottom = "0";
+        thumbnail.style.left = "0";
+        thumbnail.style.right = "0";
+        thumbnail.style.zIndex = "1000";
+
+        document.body.appendChild(thumbnail);
+    }
+<\/script>
+            `;
+            alert(js);
+        };
+
+        var params = new URLSearchParams(document.location.search);
+
+        var siteid = params.get("siteid");
+
+        if(siteid != null)   {
+            var id = document.getElementById("webid");
+            id.innerHTML = "Website ID: " + siteid;
+        }
+    </script>
+</body>
+</html>
